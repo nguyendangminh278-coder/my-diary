@@ -415,8 +415,31 @@ const Navigation = ({ activeTab, setActiveTab }) => {
             const toggleTopic = (index) => setExpandedTopic(expandedTopic === index ? null : index);
             const topics = [
                 { title: "IELTS", desc: "Chinh phục ngôn ngữ", progress: 70, color: "from-blue-500 to-cyan-400" },
-                { title: "Marketing & Social", desc: "Chiến lược nội dung & Thương hiệu", progress: 50, color: "from-teal-500 to-emerald-400" },
-                { title: "Business Analysis", desc: "Phân tích dữ liệu & Kinh doanh", progress: 0, color: "from-indigo-500 to-purple-400", links: ["https://drive.google.com/drive/folders/1-MfpCq2TQjPsOheRo7CQKf0EI6sSHZ8r", "https://drive.google.com/drive/folders/1zDA5L6Jke7oqxW56HTqS9D1mAsb68ail", "https://drive.google.com/drive/folders/1W6KfKoGyKUm5iK12BOJCbAjRqMBWnq6z", "https://drive.google.com/drive/folders/11f2Lc_56M5IUKmhCU0hN-YvVtimT0xei", "https://drive.google.com/drive/folders/120R5JSabeL_g9oy4DMBzEm4bcLNr5oAI?usp=drive_link"] },
+                { 
+                    title: "Marketing & Social", 
+                    desc: "Chiến lược nội dung & Thương hiệu", 
+                    progress: 50, 
+                    color: "from-teal-500 to-emerald-400",
+                    links: [
+                        { name: "Khóa học MST", url: "https://drive.google.com/drive/u/1/folders/1FfcJQHNfqyHNuE1noTcpkL55-T2cix0e" },
+                        { name: "Khóa học Nguyễn Cảnh", url: "https://drive.google.com/drive/folders/16q14w64JM7l2doapZpuHtlVvgHcNIYae" },
+                        { name: "Khóa học Markus", url: "https://drive.google.com/drive/u/1/folders/1wMcYquwtAQnar-G-4LN4gBzlWyRVKlec" },
+                        { name: "Khóa học Tiến Quốc", url: "https://drive.google.com/drive/u/1/folders/1PwEI3g-leZIFviayvhHAemamIKJAz5jl" }
+                    ]
+                },
+                { 
+                    title: "Business Analysis", 
+                    desc: "Phân tích dữ liệu & Kinh doanh", 
+                    progress: 0, 
+                    color: "from-indigo-500 to-purple-400", 
+                    links: [
+                        { name: "Tài liệu BA #1", url: "https://drive.google.com/drive/folders/1-MfpCq2TQjPsOheRo7CQKf0EI6sSHZ8r" },
+                        { name: "Tài liệu BA #2", url: "https://drive.google.com/drive/folders/1zDA5L6Jke7oqxW56HTqS9D1mAsb68ail" },
+                        { name: "Tài liệu BA #3", url: "https://drive.google.com/drive/folders/1W6KfKoGyKUm5iK12BOJCbAjRqMBWnq6z" },
+                        { name: "Tài liệu BA #4", url: "https://drive.google.com/drive/folders/11f2Lc_56M5IUKmhCU0hN-YvVtimT0xei" },
+                        { name: "Tài liệu BA #5", url: "https://drive.google.com/drive/folders/120R5JSabeL_g9oy4DMBzEm4bcLNr5oAI?usp=drive_link" }
+                    ] 
+                },
                 { title: "Duo Study with H", desc: "Học tập cùng nhau", progress: 36, color: "from-pink-500 to-rose-400", hasFinance: true },
             ];
 
@@ -434,7 +457,7 @@ const Navigation = ({ activeTab, setActiveTab }) => {
                                     </div>
                                     <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden"><div className={`h-full bg-gradient-to-r ${topic.color} rounded-full shadow-[0_0_10px_currentColor] opacity-90`} style={{ width: `${topic.progress}%` }}></div></div>
                                     {expandedTopic === idx && topic.links && (
-                                        <div className="mt-6 pt-4 border-t border-indigo-100 animate-fade-in-down"><h4 className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-3">Learning Resources (Drive)</h4><div className="space-y-3">{topic.links.map((link, lIdx) => (<a key={lIdx} href={link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition-colors group/link"><Icons.Folder size={16} className="group-hover/link:text-indigo-500" /><span className="text-sm font-medium">Tài liệu học tập #{lIdx + 1}</span><Icons.ArrowUpRight size={14} className="ml-auto opacity-50 group-hover/link:opacity-100" /></a>))}</div></div>
+                                        <div className="mt-6 pt-4 border-t border-indigo-100 animate-fade-in-down"><h4 className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-3">Learning Resources (Drive)</h4><div className="space-y-3">{topic.links.map((link, lIdx) => (<a key={lIdx} href={link.url || link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition-colors group/link"><Icons.Folder size={16} className="group-hover/link:text-indigo-500" /><span className="text-sm font-medium">{link.name || `Tài liệu học tập #${lIdx + 1}`}</span><Icons.ArrowUpRight size={14} className="ml-auto opacity-50 group-hover/link:opacity-100" /></a>))}</div></div>
                                     )}
                                     {expandedTopic === idx && topic.hasFinance && (
                                         <div className="mt-6 pt-4 border-t border-rose-100 animate-fade-in-down">
