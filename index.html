@@ -57,13 +57,21 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in-down { animation: fadeInDown 0.5s ease-out forwards; }
+        
+        /* Task completion animation */
+        .task-removing {
+            animation: slideOutRight 0.4s ease-in-out forwards;
+        }
+        @keyframes slideOutRight {
+            to { opacity: 0; transform: translateX(50px) scale(0.95); }
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, Fragment } = React;
+        const { useState, useEffect, Fragment, useMemo } = React;
 
         // --- ICONS (SVG) ---
         const Icons = {
@@ -87,7 +95,10 @@
             Globe: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>,
             PenTool: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 19 7-7 3 3-7 7-3-3z"/><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>,
             Mic: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="23"/><line x1="8" x2="16" y1="23" y2="23"/></svg>,
-            Headphones: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+            Headphones: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>,
+            ListTodo: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14 14.5a2.5 2.5 0 1 1 5 0 2.5 2.5 0 0 1-5 0Z"/><path d="M16 17v5"/><path d="M3 6h18"/><path d="M3 12h8"/><path d="M3 18h8"/></svg>,
+            Plus: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
+            CheckCircle: ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         };
 
         // --- HELPER FUNCTIONS ---
@@ -100,9 +111,7 @@
             else if ((month == 5 && day >= 21) || (month == 6 && day <= 20) || (month == 9 && day >= 23) || (month == 10 && day <= 22) || (month == 1 && day >= 20) || (month == 2 && day <= 18)) element = 'Air';
             
             switch (element) {
-                // Style Fire (Trần Thùy Linh) cho "Siêu sáng"
                 case 'Fire': return { container: 'bg-rose-950/40 border-rose-500/50 shadow-[0_0_25px_rgba(251,113,133,0.25)] hover:shadow-[0_0_40px_rgba(251,113,133,0.4)] hover:border-rose-400', text: 'text-rose-50 drop-shadow-[0_0_8px_rgba(251,113,133,0.8)]', subText: 'text-rose-200/80', accent: 'text-rose-300', ring: 'ring-rose-400 shadow-[0_0_15px_rgba(251,113,133,0.6)]', icon: 'text-rose-300', elementName: 'FIRE' };
-                
                 case 'Water': return { container: 'bg-cyan-950/30 border-cyan-500/30 shadow-[0_0_20px_rgba(34,211,238,0.15)] hover:shadow-[0_0_30px_rgba(34,211,238,0.3)] hover:border-cyan-400/50', text: 'text-cyan-200', subText: 'text-cyan-300/70', accent: 'text-cyan-400', ring: 'ring-cyan-500/50', icon: 'text-cyan-400', elementName: 'WATER' };
                 case 'Air': return { container: 'bg-slate-800/40 border-slate-300/30 shadow-[0_0_20px_rgba(248,250,252,0.15)] hover:shadow-[0_0_30px_rgba(248,250,252,0.25)] hover:border-white/50', text: 'text-slate-100', subText: 'text-slate-400', accent: 'text-white', ring: 'ring-slate-300/50', icon: 'text-slate-200', elementName: 'AIR' };
                 case 'Earth': return { container: 'bg-orange-950/30 border-orange-700/30 shadow-[0_0_20px_rgba(251,146,60,0.15)] hover:shadow-[0_0_30px_rgba(251,146,60,0.3)] hover:border-orange-500/50', text: 'text-orange-100', subText: 'text-orange-300/70', accent: 'text-orange-300', ring: 'ring-orange-600/50', icon: 'text-orange-400', elementName: 'EARTH' };
@@ -118,7 +127,8 @@
             }
             return loc;
         };
-// --- DATA ---
+
+        // --- DATA ---
         const TAROT_DATA = [
             {
                 id: 1, name: "Hoàng Việt Hưng", image: "https://raw.githubusercontent.com/nguyendangminh278-coder/my-diary/cf79a39642c0ae3624f85e7e184e184dbda7f9ac/Tarot/Ho%C3%A0ng%20vi%E1%BB%87t%20h%C6%B0ng.jpg", dob: "03/02/2005", location: "Ba Đình, Hà Nội",
@@ -260,40 +270,11 @@
             }
         ];
 
-        // --- NEW DATA: DIARY ---
         const DIARY_DATA = [
-            {
-                id: 1,
-                title: 'Tiếng Yêu Này, Anh Dịch Được Không?',
-                subTitle: 'Can This Love Be Translated?',
-                link: 'https://www.rophim.nl/phim/tieng-yeu-nay-anh-dich-duoc-khong.4nTQyfq5',
-                type: 'Movie',
-                date: '2026'
-            },
-            {
-                id: 2,
-                title: 'Osoraku Kanojo Wa Ore No Aniki Wo Neratteru',
-                subTitle: 'Chapter 9',
-                link: 'https://truyenqq.com.vn/osoraku-kanojo-wa-ore-no-aniki-wo-neratteru/chapter-9',
-                type: 'Manga',
-                date: 'Chapter 9'
-            },
-            {
-                id: 3,
-                title: 'Tôi Muốn Độc Chiếm Cô Bạn Gái Lạnh Lùng Của Mình',
-                subTitle: 'Novel / Manga',
-                link: 'https://cuutruyen.net/mangas/641/chapters/76080',
-                type: 'Manga',
-                date: 'Reading'
-            },
-            {
-                id: 4,
-                title: 'Ichizu De Bitch Na Kouhai',
-                subTitle: 'Chapter 148',
-                link: 'https://truyenqqno.com/truyen-tranh/ichizu-de-bitch-na-kouhai-8305-chap-148.html',
-                type: 'Manga',
-                date: 'Chapter 148'
-            }
+            { id: 1, title: 'Tiếng Yêu Này, Anh Dịch Được Không?', subTitle: 'Can This Love Be Translated?', link: 'https://www.rophim.nl/phim/tieng-yeu-nay-anh-dich-duoc-khong.4nTQyfq5', type: 'Movie', date: '2026' },
+            { id: 2, title: 'Osoraku Kanojo Wa Ore No Aniki Wo Neratteru', subTitle: 'Chapter 9', link: 'https://truyenqq.com.vn/osoraku-kanojo-wa-ore-no-aniki-wo-neratteru/chapter-9', type: 'Manga', date: 'Chapter 9' },
+            { id: 3, title: 'Tôi Muốn Độc Chiếm Cô Bạn Gái Lạnh Lùng Của Mình', subTitle: 'Novel / Manga', link: 'https://cuutruyen.net/mangas/641/chapters/76080', type: 'Manga', date: 'Reading' },
+            { id: 4, title: 'Ichizu De Bitch Na Kouhai', subTitle: 'Chapter 148', link: 'https://truyenqqno.com/truyen-tranh/ichizu-de-bitch-na-kouhai-8305-chap-148.html', type: 'Manga', date: 'Chapter 148' }
         ];
 
         const Navigation = ({ activeTab, setActiveTab }) => {
@@ -381,7 +362,7 @@
                         ))}
                     </div>
                     
-                    <header className="mb-12 text-center relative z-10">
+                    <header className="mb-12 text-center relative z-10 pt-10">
                         <h2 className="text-4xl tracking-[0.2em] text-cyan-200 mb-2 font-emphasis icon-glow">COSMIC MESSAGES</h2>
                         <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto"></div>
                     </header>
@@ -455,11 +436,10 @@
                     <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyan-900/20 rounded-full blur-[120px]"></div>
                     <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-900/20 rounded-full blur-[100px]"></div>
                     <div className="absolute inset-0 pointer-events-none">{[...Array(30)].map((_, i) => (<div key={i} className="absolute bg-white rounded-full opacity-60 animate-pulse" style={{ top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`, width: `${Math.random() * 3}px`, height: `${Math.random() * 3}px`, animationDuration: `${Math.random() * 3 + 2}s` }}></div>))}</div>
-                    <div className="relative z-10 max-w-5xl mx-auto">
+                    <div className="relative z-10 max-w-5xl mx-auto pt-10">
                         <header className="mb-16 text-center"><h2 className="text-4xl font-emphasis text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 mb-2 icon-glow">CHART</h2><p className="text-cyan-300/70 text-sm tracking-[0.3em] uppercase">Tử Vi - Bản Đồ Sao - Human Design</p></header>
                         <div className="grid md:grid-cols-2 gap-8">
                             {ASTRO_DATA.map((item) => {
-                                // Logic hiển thị đặc biệt cho Trần Thùy Linh ở phần Chart
                                 const isHighlight = item.name === 'TTL';
                                 return (
                                 <div key={item.id} className={`group relative bg-slate-900/40 backdrop-blur-sm border rounded-[2rem] p-8 transition-all duration-500 ${isHighlight ? 'border-rose-500/40 shadow-[0_0_20px_rgba(251,113,133,0.15)] hover:border-rose-400' : 'border-slate-700/30 hover:bg-slate-800/50 hover:border-cyan-700/50'}`}>
@@ -479,6 +459,78 @@
         };
 
         const LearnSection = () => {
+            // --- DAILY CHECKLIST STATE & LOGIC ---
+            const initialTasks = [
+                { id: 't1', category: 'Công việc chính (QII)', text: 'Cập nhật bài giảng.' },
+                { id: 't2', category: 'Công việc chính (QII)', text: 'Xử lý số liệu thống kê.' },
+                { id: 't3', category: 'Học trên lớp', text: 'Kế toán căn bản 2.' },
+                { id: 't4', category: 'Học trên lớp', text: 'Lãnh đạo.' },
+                { id: 't5', category: 'Học trên lớp', text: 'Hệ thống thông tin.' },
+                { id: 't6', category: 'Học trên lớp', text: 'Phân tích dữ liệu.' },
+                { id: 't7', category: 'Học trên lớp', text: 'Đề án (Triển khai dự án hành vi tài chính Gen Z cùng Đinh Hồng Sơn và nhóm).' },
+                { id: 't8_1', category: 'Học cá nhân', text: 'IELTS: Luyện kỹ năng Speaking cho mục tiêu 8.0.' },
+                { id: 't8_2', category: 'Học cá nhân', text: 'IELTS: Luyện kỹ năng Writing cho mục tiêu 8.0.' },
+                { id: 't8_3', category: 'Học cá nhân', text: 'IELTS: Luyện kỹ năng Reading cho mục tiêu 8.0.' },
+                { id: 't8_4', category: 'Học cá nhân', text: 'IELTS: Luyện kỹ năng Listening cho mục tiêu 8.0.' },
+                { id: 't9', category: 'Học cá nhân', text: 'Khóa học BA: Trau dồi thêm các kỹ năng phân tích nghiệp vụ.' },
+                { id: 't10', category: 'Công việc cá nhân', text: 'Kinh doanh: Quản lý và vận hành.' },
+                { id: 't11', category: 'Công việc cá nhân', text: 'TikTok: Lên ý tưởng, quay hoặc dựng video cho nội dung "Học gì đăng đó".' }
+            ];
+
+            const [tasks, setTasks] = useState(() => {
+                const saved = localStorage.getItem('daily_checklist_2026_v2');
+                if (saved) {
+                    try { return JSON.parse(saved); } catch (e) { return initialTasks; }
+                }
+                return initialTasks;
+            });
+            const [newTaskText, setNewTaskText] = useState('');
+            const [newTaskCat, setNewTaskCat] = useState('Công việc chính (QII)');
+            const [removingIds, setRemovingIds] = useState([]);
+
+            useEffect(() => {
+                localStorage.setItem('daily_checklist_2026_v2', JSON.stringify(tasks));
+            }, [tasks]);
+
+            const categories = [
+                { name: 'Công việc chính (QII)', color: 'text-rose-600', bg: 'bg-rose-100', dot: 'bg-rose-500' },
+                { name: 'Học trên lớp', color: 'text-indigo-600', bg: 'bg-indigo-100', dot: 'bg-indigo-500' },
+                { name: 'Học cá nhân', color: 'text-cyan-600', bg: 'bg-cyan-100', dot: 'bg-cyan-500' },
+                { name: 'Công việc cá nhân', color: 'text-emerald-600', bg: 'bg-emerald-100', dot: 'bg-emerald-500' }
+            ];
+
+            const handleAddTask = (e) => {
+                e.preventDefault();
+                if (!newTaskText.trim()) return;
+                const newTask = {
+                    id: 't_' + Date.now(),
+                    category: newTaskCat,
+                    text: newTaskText.trim()
+                };
+                setTasks([...tasks, newTask]);
+                setNewTaskText('');
+            };
+
+            const handleCompleteTask = (id) => {
+                setRemovingIds(prev => [...prev, id]);
+                setTimeout(() => {
+                    setTasks(prev => prev.filter(t => t.id !== id));
+                    setRemovingIds(prev => prev.filter(rId => rId !== id));
+                }, 400);
+            };
+
+            const resetTasks = () => {
+                if(confirm("Khôi phục danh sách mặc định?")) {
+                    setTasks(initialTasks);
+                }
+            };
+
+            const groupedTasks = categories.map(cat => ({
+                ...cat,
+                items: tasks.filter(t => t.category === cat.name)
+            })).filter(cat => cat.items.length > 0);
+
+            // --- EXISTING STUDY TOPICS LOGIC ---
             const [expandedTopic, setExpandedTopic] = useState(null);
             const toggleTopic = (index) => setExpandedTopic(expandedTopic === index ? null : index);
             const topics = [
@@ -487,84 +539,129 @@
                     desc: "Chinh phục ngôn ngữ", 
                     progress: 70, 
                     color: "from-blue-500 to-cyan-400",
-                    // NEW STRUCTURE FOR IELTS
                     subSections: [
                         {
-                            title: "General Information",
-                            icon: Icons.Globe, 
-                            links: [
-                                { name: "Tài nguyên lớp", url: "https://docs.google.com/spreadsheets/d/1Pxwfm8TbMrNcWfFchdMlz-QDMfXR31cVaSG9htMi-3g/edit?gid=1745334128#gid=1745334128" },
-                                { name: "Thông tin chung", url: "https://docs.google.com/document/d/1ZoMx8ReqovJ0xHIAXMHnbaW0keAxnMLqKqHYpJ6z_KI/edit?tab=t.fc69fw4mo0p4" }
-                            ]
+                            title: "General Information", icon: Icons.Globe, 
+                            links: [ { name: "Tài nguyên lớp", url: "https://docs.google.com/spreadsheets/d/1Pxwfm8TbMrNcWfFchdMlz-QDMfXR31cVaSG9htMi-3g/edit?gid=1745334128#gid=1745334128" }, { name: "Thông tin chung", url: "https://docs.google.com/document/d/1ZoMx8ReqovJ0xHIAXMHnbaW0keAxnMLqKqHYpJ6z_KI/edit?tab=t.fc69fw4mo0p4" } ]
                         },
                         {
-                            title: "Speaking",
-                            icon: Icons.Mic,
-                            links: [
-                                { name: "Web Luyện Nói", url: "https://luyennoi.com/" },
-                                { name: "Sheet Tổng Hợp 1", url: "https://docs.google.com/spreadsheets/d/1oZPoeyAza3v-jVjLngICOJImTgzTitWJ1JAu3JH_Mw4/edit?gid=1948675556#gid=1948675556" },
-                                { name: "Sheet Tổng Hợp 2", url: "https://docs.google.com/spreadsheets/d/1r97J3w80AgBU8dPcDkoUXA0upmTjYEplE1CnCTPCecQ/edit?gid=812152581#gid=812152581" }
-                            ]
+                            title: "Speaking", icon: Icons.Mic,
+                            links: [ { name: "Web Luyện Nói", url: "https://luyennoi.com/" }, { name: "Sheet Tổng Hợp 1", url: "https://docs.google.com/spreadsheets/d/1oZPoeyAza3v-jVjLngICOJImTgzTitWJ1JAu3JH_Mw4/edit?gid=1948675556#gid=1948675556" }, { name: "Sheet Tổng Hợp 2", url: "https://docs.google.com/spreadsheets/d/1r97J3w80AgBU8dPcDkoUXA0upmTjYEplE1CnCTPCecQ/edit?gid=812152581#gid=812152581" } ]
                         },
                         {
-                            title: "Listening",
-                            icon: Icons.Headphones,
-                            links: [
-                                { name: "Lớp Luyện Listening (Tùng Anh)", url: "https://ieltstunganh.com/my-class/lop-luyen-listening-28?tab=1" },
-                                { name: "Study4 (Practice Tests)", url: "https://study4.com/tests/ielts/" }
-                            ]
+                            title: "Listening", icon: Icons.Headphones,
+                            links: [ { name: "Lớp Luyện Listening (Tùng Anh)", url: "https://ieltstunganh.com/my-class/lop-luyen-listening-28?tab=1" }, { name: "Study4 (Practice Tests)", url: "https://study4.com/tests/ielts/" } ]
                         },
                         {
-                            title: "Reading",
-                            icon: Icons.BookOpen,
-                            links: [
-                                { name: "Lớp Luyện Reading (Tùng Anh)", url: "https://ieltstunganh.com/my-class/lop-luyen-reading-theo-dang-bai-30?tab=1" },
-                                { name: "Study4 (Practice Tests)", url: "https://study4.com/tests/ielts/" }
-                            ]
+                            title: "Reading", icon: Icons.BookOpen,
+                            links: [ { name: "Lớp Luyện Reading (Tùng Anh)", url: "https://ieltstunganh.com/my-class/lop-luyen-reading-theo-dang-bai-30?tab=1" }, { name: "Study4 (Practice Tests)", url: "https://study4.com/tests/ielts/" } ]
                         },
                         {
-                            title: "Writing",
-                            icon: Icons.PenTool,
-                            links: [
-                                { name: "Task 1 Guide", url: "https://docs.google.com/document/d/1ZoMx8ReqovJ0xHIAXMHnbaW0keAxnMLqKqHYpJ6z_KI/edit?tab=t.qo8vkdnm5rqz" },
-                                { name: "Task 2 Guide", url: "https://docs.google.com/document/d/1ZoMx8ReqovJ0xHIAXMHnbaW0keAxnMLqKqHYpJ6z_KI/edit?tab=t.27mrn5rscysd" }
-                            ]
+                            title: "Writing", icon: Icons.PenTool,
+                            links: [ { name: "Task 1 Guide", url: "https://docs.google.com/document/d/1ZoMx8ReqovJ0xHIAXMHnbaW0keAxnMLqKqHYpJ6z_KI/edit?tab=t.qo8vkdnm5rqz" }, { name: "Task 2 Guide", url: "https://docs.google.com/document/d/1ZoMx8ReqovJ0xHIAXMHnbaW0keAxnMLqKqHYpJ6z_KI/edit?tab=t.27mrn5rscysd" } ]
                         }
                     ]
                 },
                 { 
-                    title: "Marketing & Social", 
-                    desc: "Chiến lược nội dung & Thương hiệu", 
-                    progress: 50, 
-                    color: "from-teal-500 to-emerald-400",
-                    links: [
-                        { name: "Khóa học MST", url: "https://drive.google.com/drive/u/1/folders/1FfcJQHNfqyHNuE1noTcpkL55-T2cix0e" },
-                        { name: "Khóa học Nguyễn Cảnh", url: "https://drive.google.com/drive/folders/16q14w64JM7l2doapZpuHtlVvgHcNIYae" },
-                        { name: "Khóa học Markus", url: "https://drive.google.com/drive/u/1/folders/1wMcYquwtAQnar-G-4LN4gBzlWyRVKlec" },
-                        { name: "Khóa học Tiến Quốc", url: "https://drive.google.com/drive/u/1/folders/1PwEI3g-leZIFviayvhHAemamIKJAz5jl" }
-                    ]
+                    title: "Marketing & Social", desc: "Chiến lược nội dung & Thương hiệu", progress: 50, color: "from-teal-500 to-emerald-400",
+                    links: [ { name: "Khóa học MST", url: "https://drive.google.com/drive/u/1/folders/1FfcJQHNfqyHNuE1noTcpkL55-T2cix0e" }, { name: "Khóa học Nguyễn Cảnh", url: "https://drive.google.com/drive/folders/16q14w64JM7l2doapZpuHtlVvgHcNIYae" }, { name: "Khóa học Markus", url: "https://drive.google.com/drive/u/1/folders/1wMcYquwtAQnar-G-4LN4gBzlWyRVKlec" }, { name: "Khóa học Tiến Quốc", url: "https://drive.google.com/drive/u/1/folders/1PwEI3g-leZIFviayvhHAemamIKJAz5jl" } ]
                 },
                 { 
-                    title: "Business Analysis", 
-                    desc: "Phân tích dữ liệu & Kinh doanh", 
-                    progress: 0, 
-                    color: "from-indigo-500 to-purple-400", 
-                    links: [
-                        { name: "Tài liệu BA #1", url: "https://drive.google.com/drive/folders/1-MfpCq2TQjPsOheRo7CQKf0EI6sSHZ8r" },
-                        { name: "Tài liệu BA #2", url: "https://drive.google.com/drive/folders/1zDA5L6Jke7oqxW56HTqS9D1mAsb68ail" },
-                        { name: "Tài liệu BA #3", url: "https://drive.google.com/drive/folders/1W6KfKoGyKUm5iK12BOJCbAjRqMBWnq6z" },
-                        { name: "Tài liệu BA #4", url: "https://drive.google.com/drive/folders/11f2Lc_56M5IUKmhCU0hN-YvVtimT0xei" },
-                        { name: "Tài liệu BA #5", url: "https://drive.google.com/drive/folders/120R5JSabeL_g9oy4DMBzEm4bcLNr5oAI?usp=drive_link" }
-                    ] 
+                    title: "Business Analysis", desc: "Phân tích dữ liệu & Kinh doanh", progress: 0, color: "from-indigo-500 to-purple-400", 
+                    links: [ { name: "Tài liệu BA #1", url: "https://drive.google.com/drive/folders/1-MfpCq2TQjPsOheRo7CQKf0EI6sSHZ8r" }, { name: "Tài liệu BA #2", url: "https://drive.google.com/drive/folders/1zDA5L6Jke7oqxW56HTqS9D1mAsb68ail" }, { name: "Tài liệu BA #3", url: "https://drive.google.com/drive/folders/1W6KfKoGyKUm5iK12BOJCbAjRqMBWnq6z" }, { name: "Tài liệu BA #4", url: "https://drive.google.com/drive/folders/11f2Lc_56M5IUKmhCU0hN-YvVtimT0xei" }, { name: "Tài liệu BA #5", url: "https://drive.google.com/drive/folders/120R5JSabeL_g9oy4DMBzEm4bcLNr5oAI?usp=drive_link" } ] 
                 },
-                { title: "Duo Study with H", desc: "Học tập cùng nhau", progress: 36, color: "from-pink-500 to-rose-400", hasFinance: true },
+                { title: "Duo Study with H", desc: "Học tập cùng nhau", progress: 36, color: "from-pink-500 to-rose-400", hasFinance: true }
             ];
 
             return (
                 <div className="min-h-screen bg-slate-100 relative overflow-hidden text-slate-800 p-6 pb-24">
                     <div className="absolute inset-0 bg-gradient-to-b from-cyan-50 to-white opacity-80"></div>
                     <div className="max-w-3xl mx-auto relative z-10">
-                        <header className="mb-12 pt-10"><h2 className="text-5xl font-emphasis text-slate-800 mb-4 opacity-90">STUDY</h2><p className="text-slate-500 text-lg font-light flex items-center gap-2"><Icons.Droplets className="w-5 h-5 text-cyan-600 icon-glow" /> Flow of Knowledge - Daily Accumulation</p></header>
+                        <header className="mb-8 pt-10">
+                            <h2 className="text-5xl font-emphasis text-slate-800 mb-4 opacity-90">STUDY</h2>
+                            <p className="text-slate-500 text-lg font-light flex items-center gap-2">
+                                <Icons.Droplets className="w-5 h-5 text-cyan-600 icon-glow" /> Flow of Knowledge - Daily Accumulation
+                            </p>
+                        </header>
+
+                        {/* --- NEW DAILY CHECKLIST SECTION --- */}
+                        <div className="mb-12 bg-white rounded-3xl p-6 md:p-8 shadow-xl border border-slate-200/60 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-rose-400 via-indigo-400 to-cyan-400"></div>
+                            
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-2xl font-emphasis text-slate-800 flex items-center gap-3">
+                                    <Icons.ListTodo className="text-indigo-600" size={28} /> Daily Checklist
+                                </h3>
+                                <button onClick={resetTasks} className="text-xs font-bold text-slate-400 hover:text-rose-500 transition-colors uppercase tracking-widest border border-slate-200 px-3 py-1.5 rounded-full hover:border-rose-200 hover:bg-rose-50">Reset List</button>
+                            </div>
+
+                            {/* Add Task Form */}
+                            <form onSubmit={handleAddTask} className="flex flex-col md:flex-row gap-3 mb-8 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                <select 
+                                    value={newTaskCat} 
+                                    onChange={(e) => setNewTaskCat(e.target.value)}
+                                    className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 min-w-[200px]"
+                                >
+                                    {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                                </select>
+                                <div className="relative flex-grow">
+                                    <input 
+                                        type="text" 
+                                        value={newTaskText}
+                                        onChange={(e) => setNewTaskText(e.target.value)}
+                                        placeholder="Nhập công việc mới cần làm hôm nay..." 
+                                        className="w-full px-4 py-2.5 pr-12 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                    />
+                                    <button 
+                                        type="submit" 
+                                        disabled={!newTaskText.trim()}
+                                        className="absolute right-1.5 top-1.5 bottom-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white p-1.5 rounded-lg transition-colors flex items-center justify-center aspect-square"
+                                    >
+                                        <Icons.Plus size={18} />
+                                    </button>
+                                </div>
+                            </form>
+
+                            {/* Task List */}
+                            {groupedTasks.length === 0 ? (
+                                <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+                                    <Icons.CheckCircle className="mx-auto text-emerald-400 mb-3" size={48} />
+                                    <p className="text-slate-500 font-medium">Bạn đã hoàn thành mọi nhiệm vụ hôm nay!</p>
+                                    <p className="text-slate-400 text-sm mt-1">Tuyệt vời, hãy dành thời gian nghỉ ngơi nhé.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {groupedTasks.map((group, idx) => (
+                                        <div key={idx} className="animate-fade-in-down">
+                                            <h4 className={`text-xs font-bold uppercase tracking-widest mb-3 flex items-center gap-2 ${group.color}`}>
+                                                <span className={`w-2 h-2 rounded-full ${group.dot}`}></span> {group.name}
+                                            </h4>
+                                            <div className="space-y-2">
+                                                {group.items.map(task => {
+                                                    const isRemoving = removingIds.includes(task.id);
+                                                    return (
+                                                        <div 
+                                                            key={task.id} 
+                                                            onClick={() => handleCompleteTask(task.id)}
+                                                            className={`group flex items-start gap-3 p-3 rounded-xl border border-slate-100 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer ${isRemoving ? 'task-removing bg-slate-100 border-slate-200 shadow-none' : 'shadow-sm hover:shadow-md'}`}
+                                                        >
+                                                            <div className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isRemoving ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300 group-hover:border-indigo-400 group-hover:bg-indigo-50'}`}>
+                                                                {isRemoving && <Icons.CheckCircle size={14} className="text-white" />}
+                                                            </div>
+                                                            <span className={`text-sm leading-relaxed transition-all duration-300 ${isRemoving ? 'text-slate-400 line-through' : 'text-slate-700 group-hover:text-slate-900'}`}>
+                                                                {task.text}
+                                                            </span>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* --- EXISTING TOPICS --- */}
                         <div className="space-y-6">
                             {topics.map((topic, idx) => (
                                 <div key={idx} onClick={() => (topic.links || topic.hasFinance || topic.subSections) && toggleTopic(idx)} className={`bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-cyan-100/50 transition-all duration-300 group ${(topic.links || topic.hasFinance || topic.subSections) ? 'cursor-pointer hover:shadow-xl hover:scale-[1.01]' : ''}`}>
@@ -609,7 +706,7 @@
                                                     <div key={idx} className="relative group"><span className="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full bg-white border-2 border-rose-400 group-hover:border-rose-600 group-hover:scale-110 transition-all shadow-sm"></span><h5 className="text-rose-800 font-bold text-sm flex items-center gap-2">{item.week}: {item.title}</h5><p className="text-slate-600 text-xs mt-1 leading-relaxed">{item.content}</p></div>
                                                 ))}
                                             </div></div>
-                                    </div>
+                                        </div>
                                     )}
                                 </div>
                             ))}
@@ -803,7 +900,7 @@
 
         // --- 6. APP COMPONENT ---
         const App = () => {
-            const [activeTab, setActiveTab] = useState('diary'); // Set initial state to 'diary'
+            const [activeTab, setActiveTab] = useState('learn'); // Mặc định mở ở tab STUDY
 
             const renderContent = () => {
                 switch (activeTab) {
@@ -812,7 +909,7 @@
                     case 'astro': return <AstroSection />;
                     case 'learn': return <LearnSection />;
                     case 'work': return <WorkSection />;
-                    default: return <DiarySection />;
+                    default: return <LearnSection />;
                 }
             };
 
